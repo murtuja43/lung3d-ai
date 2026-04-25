@@ -48,7 +48,7 @@ def analyze_scan(seed=42):
     confidence = round(min(score, 1.0), 2)
 
     # --- Prediction ---
-    prediction = "TB Detected" if confidence >= 0.5 else "No TB Detected"
+    prediction = "TB Detected" if confidence >= 0.4 else "No TB Detected"
 
     # --- Explanation ---
     explanation = build_explanation(
