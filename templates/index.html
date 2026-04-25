@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Lung3D AI — TB Detection System</title>
+  <link rel="stylesheet" href="/static/css/style.css" />
+
+  <!-- Three.js for 3D rendering -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════ -->
+  <!-- HEADER                                  -->
+  <!-- ═══════════════════════════════════════ -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="logo">
+        🫁 <span>Lung3D AI</span>
+      </div>
+      <p class="tagline">AI-Powered Lung CT Scan Analyzer & TB Detection</p>
+    </div>
+  </header>
+
+  <!-- ═══════════════════════════════════════ -->
+  <!-- MAIN LAYOUT                             -->
+  <!-- ═══════════════════════════════════════ -->
+  <main class="main-grid">
+
+    <!-- ─────────────────────────────────── -->
+    <!-- LEFT COLUMN: Controls + Prediction  -->
+    <!-- ─────────────────────────────────── -->
+    <aside class="sidebar">
+
+      <!-- Scan Controls -->
+      <section class="card" id="controls-card">
+        <h2>⚙️ Scan Controls</h2>
+        <label for="seed-input">Patient Scan ID (Seed):</label>
+        <input type="number" id="seed-input" value="42" min="1" max="999" />
+        <button id="analyze-btn" class="btn-primary">
+          🔍 Analyze Scan
+        </button>
+        <div id="loading" class="loading hidden">
+          <div class="spinner"></div>
+          <span>Analyzing CT scan...</span>
+        </div>
+      </section>
+
+      <!-- Prediction Result -->
+      <section class="card" id="prediction-card">
+        <h2>🧠 AI Prediction</h2>
+        <div id="prediction-result" class="prediction-placeholder">
+          Press "Analyze Scan" to see results
+        </div>
+
+        <!-- Confidence Bar -->
+        <div id="confidence-section" class="hidden">
+          <label>Confidence Score:</label>
+          <div class="confidence-bar-bg">
+            <div id="confidence-bar" class="confidence-bar"></div>
+          </div>
+          <span id="confidence-label">0%</span>
+        </div>
+      </section>
+
+      <!-- Explanation Panel -->
+      <section class="card" id="explanation-card">
+        <h2>📋 Analysis Report</h2>
+        <pre id="explanation-text" class="explanation-placeholder">
+Run a scan to see the full report here.
+        </pre>
+      </section>
+
+    </aside>
+
+    <!-- ─────────────────────────────────── -->
+    <!-- RIGHT COLUMN: Viewers               -->
+    <!-- ─────────────────────────────────── -->
+    <section class="viewers">
+
+      <!-- 2D Slice Viewer -->
+      <div class="card" id="viewer2d-card">
+        <h2>🖼️ 2D CT Slice Viewer</h2>
+        <div class="slice-tabs">
+          <button class="tab-btn active" data-axis="axial">Axial</button>
+          <button class="tab-btn" data-axis="coronal">Coronal</button>
+          <button class="tab-btn" data-axis="sagittal">Sagittal</button>
+        </div>
+        <div class="slice-viewer">
+          <div class="slice-container">
+            <p class="viewer-label">CT Scan</p>
+            <canvas id="ct-canvas" width="256" height="256"></canvas>
+          </div>
+          <div class="slice-container">
+            <p class="viewer-label">Abnormal Regions</p>
+            <canvas id="mask-canvas" width="256" height="256"></canvas>
+          </div>
+        </div>
+        <p class="viewer-hint">
+          Press "Analyze Scan" to load CT slices
+        </p>
+      </div>
+
+      <!-- 3D Viewer -->
+      <div class="card" id="viewer3d-card">
+        <h2>🌐 3D Lung Visualization</h2>
+        <div id="canvas-3d-container">
+          <canvas id="canvas-3d"></canvas>
+          <div class="legend">
+            <span class="legend-item lung">● Lung Tissue</span>
+            <span class="legend-item abnormal">● Abnormal Region</span>
+          </div>
+        </div>
+        <p class="viewer-hint">🖱️ Click and drag to rotate • Scroll to zoom</p>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ═══════════════════════════════════════ -->
+  <!-- FOOTER                                  -->
+  <!-- ═══════════════════════════════════════ -->
+  <footer class="footer">
+    <p>⚠️ Lung3D AI is a demo system only. Not for clinical use. Always consult a licensed physician.</p>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="/static/js/viewer2d.js"></script>
+  <script src="/static/js/viewer3d.js"></script>
+  <script src="/static/js/main.js"></script>
+
+</body>
+</html>
