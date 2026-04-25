@@ -424,3 +424,34 @@ html, body {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* ── Seed Presets ── */
+.seed-presets {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.seed-presets span {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.preset-btn {
+  padding: 4px 10px;
+  font-size: 11px;
+  background: var(--bg-dark);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.preset-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}

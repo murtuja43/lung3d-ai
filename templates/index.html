@@ -38,6 +38,12 @@
         <h2>⚙️ Scan Controls</h2>
         <label for="seed-input">Patient Scan ID (Seed):</label>
         <input type="number" id="seed-input" value="42" min="1" max="999" />
+        <div class="seed-presets">
+          <span>Quick Scans:</span>
+          <button class="preset-btn" data-seed="42">Patient A</button>
+          <button class="preset-btn" data-seed="7">Patient B</button>
+          <button class="preset-btn" data-seed="99">Patient C</button>
+        </div>
         <button id="analyze-btn" class="btn-primary">
           🔍 Analyze Scan
         </button>

@@ -196,4 +196,15 @@ document.addEventListener('DOMContentLoaded', () => {
     runAnalysis();
   }, 500);
 
+  
+  // ─────────────────────────────────────────
+  // Quick-select preset seed buttons
+  // ─────────────────────────────────────────
+  document.querySelectorAll('.preset-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      seedInput.value = btn.dataset.seed;
+      runAnalysis();
+    });
+  });
+
 });
