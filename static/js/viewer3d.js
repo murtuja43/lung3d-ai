@@ -9,7 +9,7 @@ const Viewer3D = (() => {
   let isDragging  = false;
   let prevMouse   = { x: 0, y: 0 };
   let rotation    = { x: 0.3, y: 0.0 };
-  let zoomLevel   = 2.5;
+  let zoomLevel   = 3.5;
 
   const container = document.getElementById('canvas-3d-container');
   const canvas    = document.getElementById('canvas-3d');
@@ -25,7 +25,7 @@ const Viewer3D = (() => {
     const w = container.clientWidth;
     const h = container.clientHeight;
     camera = new THREE.PerspectiveCamera(60, w / h, 0.01, 100);
-    camera.position.set(0, 0, zoomLevel);
+    camera.position.set(0, 0.2, zoomLevel);
 
     // Renderer
     renderer = new THREE.WebGLRenderer({

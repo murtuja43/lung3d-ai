@@ -1,29 +1,19 @@
-// ═══════════════════════════════════════════
-// 2D CT SLICE VIEWER
-// ═══════════════════════════════════════════
-
 const Viewer2D = (() => {
 
-  // Current state
   let currentAxis   = 'axial';
   let currentSlices = null;
 
-  // Canvas elements
   const ctCanvas   = document.getElementById('ct-canvas');
   const maskCanvas = document.getElementById('mask-canvas');
   const ctCtx      = ctCanvas.getContext('2d');
   const maskCtx    = maskCanvas.getContext('2d');
 
-  // ─────────────────────────────────────────
   // Draw a base64 PNG onto a canvas
-  // ─────────────────────────────────────────
   function drawBase64Image(ctx, canvas, base64String) {
     return new Promise((resolve) => {
       const img = new Image();
       img.onload = () => {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        // Scale image to fill canvas
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         resolve();
       };
@@ -31,65 +21,75 @@ const Viewer2D = (() => {
     });
   }
 
-  // ─────────────────────────────────────────
-  // Draw the CT scan + mask overlay
-  // ─────────────────────────────────────────
+  // Draw CT scan + red overlay for abnormal mask
   async function renderSlice(axis) {
     if (!currentSlices) return;
 
     const sliceData = currentSlices[axis];
     const maskData  = currentSlices[axis + '_mask'];
 
-    // Draw CT scan
+    // Draw CT scan on left canvas
     await drawBase64Image(ctCtx, ctCanvas, sliceData);
 
-    // Draw mask canvas (abnormal regions in red overlay)
+    // Draw abnormal mask on right canvas
+    // First fill black background
+    maskCtx.fillStyle = '#050a12';
+    maskCtx.fillRect(0, 0, maskCanvas.width, maskCanvas.height);
+
+    // Load mask image
     const img = new Image();
     img.onload = () => {
-      // Draw original mask in grayscale first
-      maskCtx.clearRect(0, 0, maskCanvas.width, maskCanvas.height);
-      maskCtx.drawImage(img, 0, 0, maskCanvas.width, maskCanvas.height);
+      // Draw to offscreen canvas to read pixels
+      const offscreen = document.createElement('canvas');
+      offscreen.width  = maskCanvas.width;
+      offscreen.height = maskCanvas.height;
+      const offCtx = offscreen.getContext('2d');
+      offCtx.drawImage(img, 0, 0, maskCanvas.width, maskCanvas.height);
 
-      // Add red overlay for abnormal pixels
-      const imageData = maskCtx.getImageData(
+      const imageData = offCtx.getImageData(
         0, 0, maskCanvas.width, maskCanvas.height
       );
       const data = imageData.data;
 
+      // Create output image data
+      const outData = maskCtx.createImageData(maskCanvas.width, maskCanvas.height);
+      const out     = outData.data;
+
       for (let i = 0; i < data.length; i += 4) {
-        const brightness = data[i]; // R channel
-        if (brightness > 30) {
-          // Abnormal pixel — paint red
-          data[i]     = 255; // R
-          data[i + 1] = 50;  // G
-          data[i + 2] = 50;  // B
-          data[i + 3] = 200; // A
+        const brightness = data[i]; // R channel (grayscale)
+
+        if (brightness > 10) {
+          // Abnormal pixel — bright red
+          out[i]     = 255;
+          out[i + 1] = 40;
+          out[i + 2] = 40;
+          out[i + 3] = 255;
         } else {
-          // Normal pixel — dark background
-          data[i]     = 10;
-          data[i + 1] = 20;
-          data[i + 2] = 30;
-          data[i + 3] = 255;
+          // Background — very dark blue
+          out[i]     = 5;
+          out[i + 1] = 10;
+          out[i + 2] = 20;
+          out[i + 3] = 255;
         }
       }
 
-      maskCtx.putImageData(imageData, 0, 0);
+      maskCtx.putImageData(outData, 0, 0);
+
+      // Draw a subtle border around abnormal regions
+      maskCtx.strokeStyle = 'rgba(255, 100, 100, 0.3)';
+      maskCtx.lineWidth   = 1;
+      maskCtx.strokeRect(1, 1, maskCanvas.width - 2, maskCanvas.height - 2);
     };
     img.src = 'data:image/png;base64,' + maskData;
   }
 
-  // ─────────────────────────────────────────
-  // Fetch slices from backend API
-  // ─────────────────────────────────────────
+  // Fetch slices from backend
   async function loadSlices(seed = 42) {
     try {
       const response = await fetch(`/api/slices?seed=${seed}`);
       const data     = await response.json();
       currentSlices  = data.slices;
-
-      // Render the current axis
       await renderSlice(currentAxis);
-
       return true;
     } catch (err) {
       console.error('Failed to load CT slices:', err);
@@ -97,71 +97,49 @@ const Viewer2D = (() => {
     }
   }
 
-  // ─────────────────────────────────────────
-  // Set up tab buttons (Axial / Coronal / Sagittal)
-  // ─────────────────────────────────────────
+  // Tab switching
   function initTabs() {
     const tabButtons = document.querySelectorAll('.tab-btn');
-
     tabButtons.forEach(btn => {
       btn.addEventListener('click', async () => {
-        // Update active tab style
         tabButtons.forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-
-        // Switch axis and re-render
         currentAxis = btn.dataset.axis;
         await renderSlice(currentAxis);
       });
     });
   }
 
-  // ─────────────────────────────────────────
-  // Draw placeholder grid on canvas at start
-  // ─────────────────────────────────────────
+  // Placeholder grid
   function drawPlaceholder(ctx, canvas, label) {
     ctx.fillStyle = '#050a12';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-
     ctx.strokeStyle = '#1e2d45';
-    ctx.lineWidth = 1;
-
-    // Draw grid
+    ctx.lineWidth   = 1;
     for (let i = 0; i < canvas.width; i += 32) {
-      ctx.beginPath();
-      ctx.moveTo(i, 0);
-      ctx.lineTo(i, canvas.height);
-      ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(i, 0);
+      ctx.lineTo(i, canvas.height); ctx.stroke();
     }
     for (let i = 0; i < canvas.height; i += 32) {
-      ctx.beginPath();
-      ctx.moveTo(0, i);
-      ctx.lineTo(canvas.width, i);
-      ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, i);
+      ctx.lineTo(canvas.width, i); ctx.stroke();
     }
-
-    // Center text
-    ctx.fillStyle = '#1e2d45';
-    ctx.font = '13px Segoe UI';
-    ctx.textAlign = 'center';
+    ctx.fillStyle   = '#1e2d45';
+    ctx.font        = '13px Segoe UI';
+    ctx.textAlign   = 'center';
     ctx.fillText(label, canvas.width / 2, canvas.height / 2);
   }
 
-  // ─────────────────────────────────────────
-  // Initialize
-  // ─────────────────────────────────────────
   function init() {
     drawPlaceholder(ctCtx,   ctCanvas,   'CT Scan — Run Analysis');
     drawPlaceholder(maskCtx, maskCanvas, 'Abnormal Mask — Run Analysis');
     initTabs();
   }
 
-  // Public API
   return { init, loadSlices };
 
 })();
 
-// Auto-initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
   Viewer2D.init();
 });
