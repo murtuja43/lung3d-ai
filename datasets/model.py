@@ -104,10 +104,10 @@ class TBClassifierWithFeatures(nn.Module):
         score.backward()
 
         # Compute Grad-CAM
-        gradients  = self.gradients[0]   # (C, H, W)
-        activations = self.activations[0] # (C, H, W)
+        gradients  = self.gradients[0].cpu()
+        activations = self.activations[0].cpu()
 
-        weights = gradients.mean(dim=(1, 2))  # Global average pooling
+        weights = gradients.mean(dim=(1, 2))
         cam     = torch.zeros(activations.shape[1:], dtype=torch.float32)
 
         for i, w in enumerate(weights):
