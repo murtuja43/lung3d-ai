@@ -7,6 +7,7 @@ __pycache__/
 *.egg-info/
 dist/
 build/datasets/
-datasets/
+datasets/montgomery/
+datasets/shenzhen/
 models/*.pth
 models/tb_cnn_best.pth
