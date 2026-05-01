@@ -1,66 +1,146 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Lung3D AI — TB Detection System</title>
-  <link rel="stylesheet" href="/static/css/style.css" />
-
-  <!-- Three.js for 3D rendering -->
+  <title>Lung3D AI — Multimodal TB Detection</title>
+  <link rel="stylesheet" href="/static/css/style.css"/>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
 
-  <!-- ═══════════════════════════════════════ -->
-  <!-- HEADER                                  -->
-  <!-- ═══════════════════════════════════════ -->
+  <!-- ═══════════════ HEADER ═══════════════ -->
   <header class="header">
     <div class="header-inner">
-      <div class="logo">
-        🫁 <span>Lung3D AI</span>
-      </div>
-      <p class="tagline">AI-Powered Lung CT Scan Analyzer & TB Detection</p>
+      <div class="logo">🫁 <span>Lung3D AI</span></div>
+      <p class="tagline">
+        Multimodal AI — Chest X-Ray + Patient Data TB Detection
+      </p>
     </div>
   </header>
 
-  <!-- ═══════════════════════════════════════ -->
-  <!-- MAIN LAYOUT                             -->
-  <!-- ═══════════════════════════════════════ -->
-  <main class="main-grid">
+  <!-- ═══════════════ MAIN ═══════════════ -->
+  <main class="app-layout">
 
-    <!-- ─────────────────────────────────── -->
-    <!-- LEFT COLUMN: Controls + Prediction  -->
-    <!-- ─────────────────────────────────── -->
-    <aside class="sidebar">
+    <!-- ─── LEFT: Patient Form ─── -->
+    <aside class="left-panel">
 
-      <!-- Scan Controls -->
-      <section class="card" id="controls-card">
-        <h2>⚙️ Scan Controls</h2>
-        <label for="seed-input">Patient Scan ID (Seed):</label>
-        <input type="number" id="seed-input" value="42" min="1" max="999" />
-        <div class="seed-presets">
-          <span>Quick Scans:</span>
-          <button class="preset-btn" data-seed="42">Patient A</button>
-          <button class="preset-btn" data-seed="7">Patient B</button>
-          <button class="preset-btn" data-seed="99">Patient C</button>
+      <!-- Patient Info -->
+      <section class="card" id="patient-card">
+        <h2>👤 Patient Information</h2>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Age</label>
+            <input type="number" id="age" value="35"
+                   min="1" max="120" placeholder="Years"/>
+          </div>
+          <div class="form-group">
+            <label>Sex</label>
+            <select id="sex">
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+            </select>
+          </div>
         </div>
-        <button id="analyze-btn" class="btn-primary">
-          🔍 Analyze Scan
-        </button>
-        <div id="loading" class="loading hidden">
-          <div class="spinner"></div>
-          <span>Analyzing CT scan...</span>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>BMI</label>
+            <input type="number" id="bmi" value="22"
+                   step="0.1" min="10" max="60"
+                   placeholder="kg/m²"/>
+          </div>
+          <div class="form-group">
+            <label>Cough Duration (weeks)</label>
+            <input type="number" id="cough_weeks"
+                   value="0" min="0" max="52"
+                   placeholder="Weeks"/>
+          </div>
+        </div>
+
+        <!-- Symptoms -->
+        <h3 class="symptoms-title">🩺 Symptoms & Risk Factors</h3>
+        <div class="symptoms-grid">
+          <label class="checkbox-item">
+            <input type="checkbox" id="fever"/>
+            <span class="checkmark"></span>
+            Fever
+          </label>
+          <label class="checkbox-item">
+            <input type="checkbox" id="night_sweats"/>
+            <span class="checkmark"></span>
+            Night Sweats
+          </label>
+          <label class="checkbox-item">
+            <input type="checkbox" id="weight_loss"/>
+            <span class="checkmark"></span>
+            Weight Loss
+          </label>
+          <label class="checkbox-item">
+            <input type="checkbox" id="fatigue"/>
+            <span class="checkmark"></span>
+            Fatigue
+          </label>
+          <label class="checkbox-item">
+            <input type="checkbox" id="chest_pain"/>
+            <span class="checkmark"></span>
+            Chest Pain
+          </label>
+          <label class="checkbox-item">
+            <input type="checkbox" id="tb_contact"/>
+            <span class="checkmark"></span>
+            TB Contact
+          </label>
+          <label class="checkbox-item">
+            <input type="checkbox" id="prev_tb"/>
+            <span class="checkmark"></span>
+            Previous TB
+          </label>
         </div>
       </section>
 
+      <!-- X-ray Upload -->
+      <section class="card" id="upload-card">
+        <h2>🖼️ Chest X-Ray Upload</h2>
+        <div class="upload-zone" id="upload-zone">
+          <div class="upload-icon">📁</div>
+          <p>Drag & drop X-ray image here</p>
+          <p class="upload-hint">or click to browse</p>
+          <p class="upload-formats">PNG, JPG supported</p>
+          <input type="file" id="xray-input"
+                 accept=".png,.jpg,.jpeg" hidden/>
+        </div>
+        <div id="upload-preview" class="hidden">
+          <img id="preview-img" src="" alt="X-ray preview"/>
+          <p id="preview-name" class="preview-name"></p>
+          <button id="remove-img" class="btn-remove">
+            ✕ Remove
+          </button>
+        </div>
+      </section>
+
+      <!-- Analyze Button -->
+      <button id="analyze-btn" class="btn-primary">
+        🔍 Analyze Patient
+      </button>
+      <div id="loading" class="loading hidden">
+        <div class="spinner"></div>
+        <span>Running AI Analysis...</span>
+      </div>
+
+    </aside>
+
+    <!-- ─── RIGHT: Results ─── -->
+    <section class="right-panel">
+
       <!-- Prediction Result -->
-      <section class="card" id="prediction-card">
+      <div class="card" id="result-card">
         <h2>🧠 AI Prediction</h2>
         <div id="prediction-result" class="prediction-placeholder">
-          Press "Analyze Scan" to see results
+          Upload an X-ray and fill in patient details,
+          then press "Analyze Patient"
         </div>
-
-        <!-- Confidence Bar -->
         <div id="confidence-section" class="hidden">
           <label>Confidence Score:</label>
           <div class="confidence-bar-bg">
@@ -68,44 +148,46 @@
           </div>
           <span id="confidence-label">0%</span>
         </div>
-      </section>
+        <div id="stats-section"></div>
+        <button id="download-btn" class="btn-download hidden">
+          📄 Download PDF Report
+        </button>
+      </div>
 
-      <!-- Explanation Panel -->
-      <section class="card" id="explanation-card">
+      <!-- Heatmap Viewer -->
+      <div class="card" id="heatmap-card">
+        <h2>🔥 X-Ray Heatmap Analysis</h2>
+        <div class="heatmap-viewer">
+          <div class="heatmap-container">
+            <p class="viewer-label">Original X-Ray</p>
+            <div class="img-box" id="original-box">
+              <p class="img-placeholder">
+                Upload an X-ray to see analysis
+              </p>
+            </div>
+          </div>
+          <div class="heatmap-container">
+            <p class="viewer-label">Grad-CAM Heatmap</p>
+            <div class="img-box" id="heatmap-box">
+              <p class="img-placeholder">
+                Suspicious regions will be highlighted here
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="heatmap-legend">
+          <span class="legend-cool">■ Low Activity</span>
+          <span class="legend-mid">■ Medium</span>
+          <span class="legend-hot">■ High Activity (Suspicious)</span>
+        </div>
+      </div>
+
+      <!-- Analysis Report -->
+      <div class="card" id="report-card">
         <h2>📋 Analysis Report</h2>
         <pre id="explanation-text" class="explanation-placeholder">
-Run a scan to see the full report here.
+Run an analysis to see the full clinical report here.
         </pre>
-      </section>
-
-    </aside>
-
-    <!-- ─────────────────────────────────── -->
-    <!-- RIGHT COLUMN: Viewers               -->
-    <!-- ─────────────────────────────────── -->
-    <section class="viewers">
-
-      <!-- 2D Slice Viewer -->
-      <div class="card" id="viewer2d-card">
-        <h2>🖼️ 2D CT Slice Viewer</h2>
-        <div class="slice-tabs">
-          <button class="tab-btn active" data-axis="axial">Axial</button>
-          <button class="tab-btn" data-axis="coronal">Coronal</button>
-          <button class="tab-btn" data-axis="sagittal">Sagittal</button>
-        </div>
-        <div class="slice-viewer">
-          <div class="slice-container">
-            <p class="viewer-label">CT Scan</p>
-            <canvas id="ct-canvas" width="256" height="256"></canvas>
-          </div>
-          <div class="slice-container">
-            <p class="viewer-label">Abnormal Regions</p>
-            <canvas id="mask-canvas" width="256" height="256"></canvas>
-          </div>
-        </div>
-        <p class="viewer-hint">
-          Press "Analyze Scan" to load CT slices
-        </p>
       </div>
 
       <!-- 3D Viewer -->
@@ -115,26 +197,31 @@ Run a scan to see the full report here.
           <canvas id="canvas-3d"></canvas>
           <div class="legend">
             <span class="legend-item lung">● Lung Tissue</span>
-            <span class="legend-item abnormal">● Abnormal Region</span>
+            <span class="legend-item abnormal">
+              ● Abnormal Region
+            </span>
           </div>
         </div>
-        <p class="viewer-hint">🖱️ Click and drag to rotate • Scroll to zoom</p>
+        <p class="viewer-hint">
+          🖱️ Drag to rotate • Scroll to zoom
+        </p>
       </div>
 
     </section>
 
   </main>
 
-  <!-- ═══════════════════════════════════════ -->
-  <!-- FOOTER                                  -->
-  <!-- ═══════════════════════════════════════ -->
+  <!-- ═══════════════ FOOTER ═══════════════ -->
   <footer class="footer">
-    <p>⚠️ Lung3D AI is a demo system only. Not for clinical use. Always consult a licensed physician.</p>
+    <p>
+      ⚠️ Lung3D AI is a demo system only.
+      Not for clinical use.
+      Always consult a licensed physician.
+    </p>
   </footer>
 
-  <!-- Scripts -->
-  <script src="/static/js/viewer2d.js"></script>
   <script src="/static/js/viewer3d.js"></script>
+  <script src="/static/js/viewer2d.js"></script>
   <script src="/static/js/main.js"></script>
 
 </body>
