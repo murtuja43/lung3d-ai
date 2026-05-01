@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Lung3D AI — AI-Powered TB Detection</title>
+  <style>
+    /* ── Reset ── */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0; padding: 0;
+    }
+
+    :root {
+      --bg:          #050a12;
+      --accent:      #00d4ff;
+      --green:       #00ff88;
+      --red:         #ff4757;
+      --text:        #e8f4fd;
+      --text-dim:    #445566;
+      --border:      #1e2d45;
+      --card:        #0d1520;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      overflow-x: hidden;
+    }
+
+    /* ── Particle canvas ── */
+    #particles {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* ── Nav ── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 18px 48px;
+      background: rgba(5, 10, 18, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-logo {
+      font-size: 20px;
+      font-weight: 700;
+      background: linear-gradient(90deg, var(--accent), var(--green));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 32px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: #8899aa;
+      text-decoration: none;
+      font-size: 14px;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover { color: var(--accent); }
+
+    .nav-cta {
+      padding: 8px 20px;
+      background: linear-gradient(135deg, #0066aa, #0099cc);
+      border-radius: 8px;
+      color: white !important;
+      font-weight: 600 !important;
+      font-size: 13px !important;
+    }
+
+    /* ── Hero ── */
+    .hero {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 100px 24px 60px;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 16px;
+      background: rgba(0, 212, 255, 0.08);
+      border: 1px solid rgba(0, 212, 255, 0.2);
+      border-radius: 999px;
+      font-size: 12px;
+      color: var(--accent);
+      margin-bottom: 28px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .badge-dot {
+      width: 6px; height: 6px;
+      background: var(--accent);
+      border-radius: 50%;
+      animation: pulse-dot 1.5s infinite;
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.4; transform: scale(0.7); }
+    }
+
+    .hero-title {
+      font-size: clamp(42px, 7vw, 80px);
+      font-weight: 800;
+      line-height: 1.1;
+      margin-bottom: 24px;
+      letter-spacing: -1px;
+    }
+
+    .hero-title .line1 { color: var(--text); }
+
+    .hero-title .line2 {
+      background: linear-gradient(
+        90deg, var(--accent), var(--green), var(--accent)
+      );
+      background-size: 200%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: shimmer 3s linear infinite;
+    }
+
+    @keyframes shimmer {
+      0%   { background-position: 0% }
+      100% { background-position: 200% }
+    }
+
+    .hero-sub {
+      font-size: clamp(15px, 2vw, 18px);
+      color: #8899aa;
+      max-width: 600px;
+      line-height: 1.7;
+      margin-bottom: 40px;
+    }
+
+    .hero-buttons {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 64px;
+    }
+
+    .btn-launch {
+      padding: 16px 40px;
+      background: linear-gradient(135deg, #0077cc, #00aadd);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      transition: all 0.3s;
+      box-shadow: 0 0 40px rgba(0, 170, 221, 0.3);
+    }
+
+    .btn-launch:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 60px rgba(0, 170, 221, 0.5);
+    }
+
+    .btn-github {
+      padding: 16px 32px;
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      transition: all 0.3s;
+    }
+
+    .btn-github:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* ── Lung animation ── */
+    .lung-visual {
+      position: relative;
+      width: 280px;
+      height: 280px;
+      margin-bottom: 48px;
+    }
+
+    .lung-svg {
+      width: 100%;
+      height: 100%;
+      filter: drop-shadow(0 0 30px rgba(0, 212, 255, 0.4));
+      animation: float 4s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50%       { transform: translateY(-12px); }
+    }
+
+    .lung-ring {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      border: 1px solid rgba(0, 212, 255, 0.15);
+      animation: ring-expand 3s ease-out infinite;
+    }
+
+    .lung-ring:nth-child(1) {
+      width: 300px; height: 300px;
+      animation-delay: 0s;
+    }
+    .lung-ring:nth-child(2) {
+      width: 360px; height: 360px;
+      animation-delay: 1s;
+    }
+    .lung-ring:nth-child(3) {
+      width: 420px; height: 420px;
+      animation-delay: 2s;
+    }
+
+    @keyframes ring-expand {
+      0%   { opacity: 0.5; transform: translate(-50%,-50%) scale(0.8); }
+      100% { opacity: 0;   transform: translate(-50%,-50%) scale(1.2); }
+    }
+
+    /* ── Stats bar ── */
+    .stats-bar {
+      display: flex;
+      gap: 48px;
+      justify-content: center;
+      flex-wrap: wrap;
+      padding: 32px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      max-width: 700px;
+      width: 100%;
+    }
+
+    .stat-item {
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 32px;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent), var(--green));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: #445566;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-top: 4px;
+    }
+
+    /* ── Features section ── */
+    .features {
+      position: relative;
+      z-index: 1;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 80px 24px;
+    }
+
+    .section-title {
+      text-align: center;
+      font-size: 36px;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    .section-sub {
+      text-align: center;
+      color: #8899aa;
+      font-size: 15px;
+      margin-bottom: 48px;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .feature-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      transition: all 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .feature-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent), var(--green));
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .feature-card:hover {
+      border-color: rgba(0, 212, 255, 0.3);
+      transform: translateY(-4px);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+    }
+
+    .feature-card:hover::before { opacity: 1; }
+
+    .feature-icon {
+      font-size: 36px;
+      margin-bottom: 16px;
+    }
+
+    .feature-title {
+      font-size: 17px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      color: var(--text);
+    }
+
+    .feature-desc {
+      font-size: 13px;
+      color: #8899aa;
+      line-height: 1.7;
+    }
+
+    /* ── How it works ── */
+    .how-it-works {
+      position: relative;
+      z-index: 1;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 24px 80px;
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 0;
+      position: relative;
+    }
+
+    .steps::before {
+      content: '';
+      position: absolute;
+      top: 32px;
+      left: 10%;
+      right: 10%;
+      height: 1px;
+      background: linear-gradient(
+        90deg, transparent, var(--accent), transparent
+      );
+    }
+
+    .step {
+      text-align: center;
+      padding: 20px 16px;
+    }
+
+    .step-num {
+      width: 64px; height: 64px;
+      border-radius: 50%;
+      background: var(--card);
+      border: 2px solid var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      margin: 0 auto 16px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .step-title {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: var(--accent);
+    }
+
+    .step-desc {
+      font-size: 12px;
+      color: #8899aa;
+      line-height: 1.6;
+    }
+
+    /* ── CTA section ── */
+    .cta-section {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      padding: 80px 24px;
+      background: linear-gradient(
+        180deg,
+        transparent,
+        rgba(0, 212, 255, 0.03),
+        transparent
+      );
+    }
+
+    .cta-title {
+      font-size: 40px;
+      font-weight: 800;
+      margin-bottom: 16px;
+    }
+
+    .cta-sub {
+      color: #8899aa;
+      font-size: 16px;
+      margin-bottom: 36px;
+    }
+
+    /* ── Footer ── */
+    footer {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      padding: 24px;
+      border-top: 1px solid var(--border);
+      color: #445566;
+      font-size: 12px;
+    }
+
+    /* ── Scan animation ── */
+    .scan-line {
+      position: absolute;
+      left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(
+        90deg,
+        transparent,
+        var(--accent),
+        transparent
+      );
+      animation: scan 3s ease-in-out infinite;
+      opacity: 0.6;
+      top: 0;
+    }
+
+    @keyframes scan {
+      0%   { top: 0%;   opacity: 0; }
+      10%  { opacity: 0.6; }
+      90%  { opacity: 0.6; }
+      100% { top: 100%; opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Particle canvas -->
+<canvas id="particles"></canvas>
+
+<!-- Nav -->
+<nav>
+  <div class="nav-logo">🫁 Lung3D AI</div>
+  <ul class="nav-links">
+    <li><a href="#features">Features</a></li>
+    <li><a href="#how">How It Works</a></li>
+    <li>
+      <a href="https://github.com/murtuja43/lung3d-ai"
+         target="_blank">GitHub</a>
+    </li>
+    <li>
+      <a href="/app" class="nav-cta">Launch App →</a>
+    </li>
+  </ul>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+
+  <div class="lung-visual">
+    <div class="lung-ring"></div>
+    <div class="lung-ring"></div>
+    <div class="lung-ring"></div>
+    <div class="scan-line"></div>
+    <svg class="lung-svg" viewBox="0 0 200 220"
+         fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- Left lung -->
+      <path d="M95 30 C95 30 70 25 55 40
+               C40 55 35 75 33 95
+               C30 120 32 145 38 165
+               C44 182 55 195 68 195
+               C78 195 88 188 92 178
+               C94 172 95 165 95 155 Z"
+            fill="rgba(0,212,255,0.08)"
+            stroke="#00d4ff" stroke-width="1.5"
+            opacity="0.9"/>
+      <!-- Right lung -->
+      <path d="M105 30 C105 30 130 25 145 40
+               C160 55 165 75 167 95
+               C170 120 168 145 162 165
+               C156 182 145 195 132 195
+               C122 195 112 188 108 178
+               C106 172 105 165 105 155 Z"
+            fill="rgba(0,212,255,0.08)"
+            stroke="#00d4ff" stroke-width="1.5"
+            opacity="0.9"/>
+      <!-- Trachea -->
+      <path d="M95 30 L95 15 Q100 10 105 15 L105 30"
+            stroke="#00d4ff" stroke-width="1.5"
+            fill="none" opacity="0.7"/>
+      <!-- Bronchi left -->
+      <path d="M100 45 Q85 55 75 70"
+            stroke="#00ff88" stroke-width="1"
+            fill="none" opacity="0.5"/>
+      <!-- Bronchi right -->
+      <path d="M100 45 Q115 55 125 70"
+            stroke="#00ff88" stroke-width="1"
+            fill="none" opacity="0.5"/>
+      <!-- Abnormal region (red dot) -->
+      <circle cx="68" cy="120" r="8"
+              fill="rgba(255,71,87,0.3)"
+              stroke="#ff4757" stroke-width="1.5">
+        <animate attributeName="r"
+                 values="8;11;8"
+                 dur="2s" repeatCount="indefinite"/>
+        <animate attributeName="opacity"
+                 values="0.8;0.4;0.8"
+                 dur="2s" repeatCount="indefinite"/>
+      </circle>
+    </svg>
+  </div>
+
+  <div class="hero-badge">
+    <div class="badge-dot"></div>
+    AI-Powered Medical Imaging
+  </div>
+
+  <h1 class="hero-title">
+    <div class="line1">Detect TB with</div>
+    <div class="line2">Multimodal AI</div>
+  </h1>
+
+  <p class="hero-sub">
+    Lung3D AI combines deep learning chest X-ray analysis
+    with patient clinical data to detect Tuberculosis with
+    85%+ accuracy — complete with Grad-CAM heatmaps and
+    downloadable clinical reports.
+  </p>
+
+  <div class="hero-buttons">
+    <a href="/app" class="btn-launch">
+      🚀 Launch App
+    </a>
+    <a href="https://github.com/murtuja43/lung3d-ai"
+       target="_blank" class="btn-github">
+      ⭐ View on GitHub
+    </a>
+  </div>
+
+  <div class="stats-bar">
+    <div class="stat-item">
+      <div class="stat-value" id="acc-counter">0%</div>
+      <div class="stat-label">Model Accuracy</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-value" id="img-counter">0</div>
+      <div class="stat-label">Training Images</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-value" id="param-counter">0</div>
+      <div class="stat-label">Patient Parameters</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-value">Real</div>
+      <div class="stat-label">CNN Model</div>
+    </div>
+  </div>
+
+</section>
+
+<!-- Features -->
+<section class="features" id="features">
+  <h2 class="section-title">Everything You Need</h2>
+  <p class="section-sub">
+    A complete multimodal AI pipeline from X-ray to clinical report
+  </p>
+
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">🧠</div>
+      <div class="feature-title">ResNet18 CNN</div>
+      <div class="feature-desc">
+        Transfer learning on 800+ real chest X-rays.
+        Trained to 85% accuracy on the Montgomery
+        & Shenzhen TB datasets.
+      </div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🔥</div>
+      <div class="feature-title">Grad-CAM Heatmaps</div>
+      <div class="feature-desc">
+        Visual explanation of AI decisions. See exactly
+        which lung regions the model identified as
+        suspicious — overlaid on the original X-ray.
+      </div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">👤</div>
+      <div class="feature-title">Patient Parameters</div>
+      <div class="feature-desc">
+        11 clinical parameters including age, BMI,
+        symptoms, and risk factors fused with image
+        analysis for higher accuracy predictions.
+      </div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🌐</div>
+      <div class="feature-title">3D Lung Visualization</div>
+      <div class="feature-desc">
+        Interactive Three.js 3D point cloud of lung
+        tissue. Abnormal regions highlighted in red,
+        rotating in real time.
+      </div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📄</div>
+      <div class="feature-title">PDF Clinical Report</div>
+      <div class="feature-desc">
+        Download a professional clinical report with
+        patient data, X-ray images, heatmap, prediction
+        breakdown, and reasoning.
+      </div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">⚡</div>
+      <div class="feature-title">Real-time Analysis</div>
+      <div class="feature-desc">
+        Upload an X-ray and get results in seconds.
+        Powered by Apple MPS GPU acceleration and
+        optimized inference pipeline.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- How it works -->
+<section class="how-it-works" id="how">
+  <h2 class="section-title">How It Works</h2>
+  <p class="section-sub">Four steps from upload to diagnosis</p>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">📋</div>
+      <div class="step-title">Enter Patient Data</div>
+      <div class="step-desc">
+        Fill in age, sex, BMI, symptoms and risk factors
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">🖼️</div>
+      <div class="step-title">Upload X-Ray</div>
+      <div class="step-desc">
+        Drag & drop a chest X-ray image in PNG or JPG format
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">🤖</div>
+      <div class="step-title">AI Analysis</div>
+      <div class="step-desc">
+        CNN + clinical fusion model analyzes both inputs
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">📄</div>
+      <div class="step-title">Get Report</div>
+      <div class="step-desc">
+        View heatmap, prediction, and download PDF report
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <h2 class="cta-title">Ready to Try It?</h2>
+  <p class="cta-sub">
+    Upload a chest X-ray and get an AI-powered TB analysis in seconds
+  </p>
+  <a href="/app" class="btn-launch">
+    🚀 Launch Lung3D AI
+  </a>
+</section>
+
+<!-- Footer -->
+<footer>
+  <p>
+    🫁 Lung3D AI — Built with PyTorch, Flask & Three.js |
+    <a href="https://github.com/murtuja43/lung3d-ai"
+       style="color:#445566"
+       target="_blank">GitHub</a> |
+    ⚠️ For educational purposes only. Not for clinical use.
+  </p>
+</footer>
+
+<script>
+// ── Particle system ──
+const canvas = document.getElementById('particles');
+const ctx    = canvas.getContext('2d');
+let particles = [];
+
+function resize() {
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+for (let i = 0; i < 80; i++) {
+  particles.push({
+    x:    Math.random() * canvas.width,
+    y:    Math.random() * canvas.height,
+    r:    Math.random() * 1.5 + 0.3,
+    dx:   (Math.random() - 0.5) * 0.3,
+    dy:   (Math.random() - 0.5) * 0.3,
+    alpha: Math.random() * 0.4 + 0.1,
+  });
+}
+
+function drawParticles() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  particles.forEach(p => {
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(0, 212, 255, ${p.alpha})`;
+    ctx.fill();
+    p.x += p.dx;
+    p.y += p.dy;
+    if (p.x < 0 || p.x > canvas.width)  p.dx *= -1;
+    if (p.y < 0 || p.y > canvas.height) p.dy *= -1;
+  });
+  requestAnimationFrame(drawParticles);
+}
+drawParticles();
+
+// ── Counter animation ──
+function animateCounter(id, target, suffix='', duration=2000) {
+  const el    = document.getElementById(id);
+  const start = performance.now();
+  function update(now) {
+    const progress = Math.min((now - start) / duration, 1);
+    const eased    = 1 - Math.pow(1 - progress, 3);
+    el.textContent = Math.round(eased * target) + suffix;
+    if (progress < 1) requestAnimationFrame(update);
+  }
+  requestAnimationFrame(update);
+}
+
+// Start counters when page loads
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    animateCounter('acc-counter',  85,  '%');
+    animateCounter('img-counter',  800, '+');
+    animateCounter('param-counter', 11,  '');
+  }, 500);
+});
+</script>
+
+</body>
+</html>

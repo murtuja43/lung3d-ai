@@ -58,6 +58,10 @@ def array_to_base64_png(slice_2d, colormap=True):
 # Route: Main page
 # ─────────────────────────────────────────
 @app.route('/')
+def landing():
+    return render_template('landing.html')
+
+@app.route('/app')
 def index():
     return render_template('index.html')
 
