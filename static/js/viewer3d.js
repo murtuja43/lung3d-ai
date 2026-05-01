@@ -67,28 +67,70 @@ const Viewer3D = (() => {
   // ─────────────────────────────────────────
   function drawPlaceholderLungs() {
     const mat = new THREE.MeshBasicMaterial({
-      color:     0x1e2d45,
-      wireframe: true,
-      opacity:   0.4,
-      transparent: true
+      color: 0x1e2d45, wireframe: true,
+      opacity: 0.3, transparent: true
     });
 
-    // Left lung
-    const leftGeo = new THREE.SphereGeometry(0.35, 12, 10);
-    leftGeo.scale(0.8, 1.2, 0.75);
+    // LEFT LUNG — tall tapered shape
+    const leftPoints = [];
+    for (let i = 0; i <= 20; i++) {
+      const t      = (i / 20) * Math.PI;
+      const y      = Math.cos(t) * 0.55;
+      const taper  = Math.sin(t) * 0.85;
+      const rx     = 0.18 * taper;
+      const rz     = 0.22 * taper;
+      leftPoints.push({ y, rx, rz });
+    }
+
+    // Use CylinderGeometry stacked to simulate lung shape
+    const leftGeo = new THREE.CylinderGeometry(
+      0.12, 0.08, 1.1, 10, 1, true
+    );
+    leftGeo.scale(0.85, 1, 1);
     const leftMesh = new THREE.Mesh(leftGeo, mat);
-    leftMesh.position.set(-0.28, 0, 0);
+    leftMesh.position.set(-0.25, 0.05, 0);
     scene.add(leftMesh);
 
-    // Right lung
-    const rightGeo = new THREE.SphereGeometry(0.35, 12, 10);
-    rightGeo.scale(0.8, 1.2, 0.75);
+    // Left lung top dome
+    const leftTopGeo = new THREE.SphereGeometry(0.12, 8, 6,
+      0, Math.PI*2, 0, Math.PI/2);
+    leftTopGeo.scale(0.85, 1, 1);
+    const leftTop = new THREE.Mesh(leftTopGeo, mat);
+    leftTop.position.set(-0.25, 0.6, 0);
+    scene.add(leftTop);
+
+    // Left lung bottom dome
+    const leftBotGeo = new THREE.SphereGeometry(0.09, 8, 6,
+      0, Math.PI*2, Math.PI/2, Math.PI/2);
+    leftBotGeo.scale(0.85, 1, 1);
+    const leftBot = new THREE.Mesh(leftBotGeo, mat);
+    leftBot.position.set(-0.25, -0.5, 0);
+    scene.add(leftBot);
+
+    // RIGHT LUNG — slightly wider
+    const rightGeo = new THREE.CylinderGeometry(
+      0.13, 0.09, 1.1, 10, 1, true
+    );
     const rightMesh = new THREE.Mesh(rightGeo, mat);
-    rightMesh.position.set(0.28, 0, 0);
+    rightMesh.position.set(0.27, 0.05, 0);
     scene.add(rightMesh);
 
-    // Label
-    scene.userData.placeholders = [leftMesh, rightMesh];
+    const rightTopGeo = new THREE.SphereGeometry(0.13, 8, 6,
+      0, Math.PI*2, 0, Math.PI/2);
+    const rightTop = new THREE.Mesh(rightTopGeo, mat);
+    rightTop.position.set(0.27, 0.6, 0);
+    scene.add(rightTop);
+
+    const rightBotGeo = new THREE.SphereGeometry(0.10, 8, 6,
+      0, Math.PI*2, Math.PI/2, Math.PI/2);
+    const rightBot = new THREE.Mesh(rightBotGeo, mat);
+    rightBot.position.set(0.27, -0.5, 0);
+    scene.add(rightBot);
+
+    scene.userData.placeholders = [
+      leftMesh, leftTop, leftBot,
+      rightMesh, rightTop, rightBot
+    ];
   }
 
   // ─────────────────────────────────────────
@@ -142,9 +184,11 @@ const Viewer3D = (() => {
   // ─────────────────────────────────────────
   // Load 3D volume data from backend
   // ─────────────────────────────────────────
-  async function loadVolume(seed = 42) {
+  async function loadVolume(seed = 42, tbDetected = false, confidence = 0.5) {
     try {
-      const response = await fetch(`/api/volume?seed=${seed}`);
+      const response = await fetch(
+        `/api/volume?seed=${seed}&tb=${tbDetected}&confidence=${confidence}`
+      );
       const data     = await response.json();
 
       // Remove old clouds

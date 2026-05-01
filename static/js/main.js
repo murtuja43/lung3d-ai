@@ -302,8 +302,11 @@ document.addEventListener('DOMContentLoaded', () => {
       renderExplanation(data);
       renderHeatmaps(data);
 
-      // Load 3D viewer
-      await Viewer3D.loadVolume(42);
+      
+      // Load 3D viewer with real prediction
+      const isTB  = data.prediction === 'TB Detected';
+      const conf  = data.confidence || 0.5;
+      await Viewer3D.loadVolume(42, isTB, conf);
 
     } catch (err) {
       console.error('Analysis error:', err);

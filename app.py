@@ -183,8 +183,15 @@ def get_slices():
 # ─────────────────────────────────────────
 @app.route('/api/volume')
 def get_volume():
-    seed   = request.args.get('seed', 42, type=int)
-    volume, abnormal_mask, nodules = generate_ct_scan(seed=seed)
+    seed       = request.args.get('seed', 42, type=int)
+    tb         = request.args.get('tb', 'false').lower() == 'true'
+    confidence = request.args.get('confidence', 0.5, type=float)
+
+    volume, abnormal_mask, nodules = generate_ct_scan(
+        seed=seed,
+        tb_detected=tb,
+        confidence=confidence
+    )
 
     step            = 2
     lung_points     = []
