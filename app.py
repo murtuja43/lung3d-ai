@@ -22,8 +22,13 @@ app = Flask(__name__)
 # Load model once at startup
 # ─────────────────────────────────────────
 print("🔄 Loading TB AI Model...")
-predictor = TBPredictor(model_path='models/tb_cnn_best.pth')
-print("✅ Model ready!")
+try:
+    predictor = TBPredictor(model_path='models/tb_cnn_best.pth')
+    print("✅ Model ready!")
+except Exception as e:
+    print(f"⚠️  Model not found: {e}")
+    predictor = None
+    print("⚠️  Running in demo mode (rule-based only)")
 
 
 # ─────────────────────────────────────────
@@ -72,6 +77,12 @@ def index():
 @app.route('/api/analyze', methods=['POST'])
 def analyze():
     try:
+        if predictor is None:
+            return jsonify({
+            'error': 'Model not available in demo deployment. '
+                     'Run locally with trained model for full features.'
+            }), 503
+    
         # ── Get patient form data ──
         patient_data = {
             'age':          float(request.form.get('age', 30)),
@@ -237,4 +248,6 @@ def predict():
 # Run
 # ─────────────────────────────────────────
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    import os
+    port = int(os.environ.get('PORT', 5000))
+    app.run(debug=False, host='0.0.0.0', port=port)
